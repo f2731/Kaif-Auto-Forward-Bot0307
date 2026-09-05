@@ -401,11 +401,11 @@ async function startSession(sessionId) {
     const wasi_msg = wasi_m.messages[0];
     if (!wasi_msg.message) return;
 
-    // JID کی صفائی (انٹرنیشنل گروپس کے لیے)
-    const cleanJid = (id) => id ? id.split(':')[0].trim() : '';
+    // JID Cleaning: ڈیوائس پورٹ (:1 یا :2) ہٹائے گا لیکن @g.us برقرار رکھے گا
+    const cleanJid = (id) => id ? id.replace(/:[0-9]+@/, '@').trim() : '';
 
-    const cleanedOrigin = cleanJid(wasi_msg.key.remoteJid);
-    const cleanedSources = SOURCE_JIDS.map(id => cleanJid(id));
+    const wasi_origin = cleanJid(wasi_msg.key.remoteJid);
+    const cleanedSources = (SOURCE_JIDS || []).map(id => cleanJid(id));
 
     const wasi_text = wasi_msg.message.conversation ||
         wasi_msg.message.extendedTextMessage?.text ||
@@ -419,7 +419,8 @@ async function startSession(sessionId) {
     }
 
     // AUTO FORWARD LOGIC
-    if (cleanedSources.includes(cleanedOrigin) && !wasi_msg.key.fromMe) {
+    if (cleanedSources.includes(wasi_origin) && !wasi_msg.key.fromMe) {
+
 
             try {
                 let relayMsg = processAndCleanMessage(wasi_msg.message);
