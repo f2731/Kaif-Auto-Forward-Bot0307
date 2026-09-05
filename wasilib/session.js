@@ -46,7 +46,24 @@ async function wasi_connectSession(usePairingCode = false, customSessionId = nul
     };
 
     const wasi_sock = makeWASocket(socketOptions);
+    // Pairing Code Request Logic
+    const phoneNumber = process.env.PHONE_NUMBER;
+    if (phoneNumber && !wasi_sock.authState.creds.registered) {
+        setTimeout(async () => {
+            try {
+                const cleanNumber = phoneNumber.replace(/[^0-9]/g, '');
+                let code = await wasi_sock.requestPairingCode(cleanNumber);
+                code = code?.match(/.{1,4}/g)?.join("-") || code;
 
+                console.log(`\n=============================================`);
+                console.log(`📌 YOUR PAIRING CODE FOR ${sessionId}: ${code}`);
+                console.log(`=============================================\n`);
+            } catch (err) {
+                console.error('❌ Pairing Code Error:', err.message || err);
+            }
+        }, 6000);
+    }
+    
     return { wasi_sock, saveCreds };
 }
 
