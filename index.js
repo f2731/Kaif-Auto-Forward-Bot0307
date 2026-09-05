@@ -647,5 +647,14 @@ async function main() {
     // 3. Start server
     wasi_startServer();
 }
+// Auto memory check and clean restart
+setInterval(() => {
+    const memoryUsage = process.memoryUsage().heapUsed / 1024 / 1024;
+    if (memoryUsage > 450) {
+        console.log(`⚠️ High Memory Usage detected (${Math.round(memoryUsage)}MB). Restarting process...`);
+        process.exit(0); // Heroku will automatically restart the dyno
+    }
+}, 5 * 60 * 1000);
+
 
 main();
