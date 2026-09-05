@@ -398,23 +398,29 @@ async function startSession(sessionId) {
 
     // AUTO FORWARD MESSAGE HANDLER
     wasi_sock.ev.on('messages.upsert', async wasi_m => {
-        const wasi_msg = wasi_m.messages[0];
-        if (!wasi_msg.message) return;
+    const wasi_msg = wasi_m.messages[0];
+    if (!wasi_msg.message) return;
 
-        const wasi_origin = wasi_msg.key.remoteJid;
-        const wasi_text = wasi_msg.message.conversation ||
-            wasi_msg.message.extendedTextMessage?.text ||
-            wasi_msg.message.imageMessage?.caption ||
-            wasi_msg.message.videoMessage?.caption ||
-            wasi_msg.message.documentMessage?.caption || "";
+    // JID کی صفائی (انٹرنیشنل گروپس کے لیے)
+    const cleanJid = (id) => id ? id.split(':')[0].trim() : '';
 
-        // COMMAND HANDLER
-        if (wasi_text.startsWith('!')) {
-            await processCommand(wasi_sock, wasi_msg);
-        }
+    const cleanedOrigin = cleanJid(wasi_msg.key.remoteJid);
+    const cleanedSources = SOURCE_JIDS.map(id => cleanJid(id));
 
-        // AUTO FORWARD LOGIC
-        if (SOURCE_JIDS.includes(wasi_origin) && !wasi_msg.key.fromMe) {
+    const wasi_text = wasi_msg.message.conversation ||
+        wasi_msg.message.extendedTextMessage?.text ||
+        wasi_msg.message.imageMessage?.caption ||
+        wasi_msg.message.videoMessage?.caption ||
+        wasi_msg.message.documentMessage?.caption || "";
+
+    // COMMAND HANDLER
+    if (wasi_text.startsWith('!')) {
+        await processCommand(wasi_sock, wasi_msg);
+    }
+
+    // AUTO FORWARD LOGIC
+    if (cleanedSources.includes(cleanedOrigin) && !wasi_msg.key.fromMe) {
+
             try {
                 let relayMsg = processAndCleanMessage(wasi_msg.message);
                 
