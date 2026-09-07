@@ -303,10 +303,16 @@ async function handleGjidCommand(sock, from) {
 }
 async function handleChjidCommand(sock, from) {
     try {
-        const newsletters = await sock.newsletterSubscribed();
+        let newsletters = [];
+        
+        if (typeof sock.newsletterSubscribed === 'function') {
+            newsletters = await sock.newsletterSubscribed().catch(() => []);
+        }
 
         if (!newsletters || newsletters.length === 0) {
-            await sock.sendMessage(from, { text: "❌ آپ نے کوئی واٹس ایپ چینل فالو نہیں کیا ہوا یا فہرست خالی ہے۔" });
+            await sock.sendMessage(from, { 
+                text: "❌ کوئی واٹس ایپ چینل نہیں ملا۔ یقینی بنائیں کہ 0307 والے نمبر سے چینل **Follow** کیا ہوا ہے۔" 
+            });
             return;
         }
 
@@ -314,8 +320,8 @@ async function handleChjidCommand(sock, from) {
         let count = 1;
 
         for (const channel of newsletters) {
-            const name = channel.name || "Unnamed Channel";
-            const jid = channel.id;
+            const name = channel.name || channel.subject || "Unnamed Channel";
+            const jid = channel.id || channel.jid;
 
             response += `${count}. *${name}*\n`;
             response += `🆔 \`${jid}\`\n\n`;
@@ -323,17 +329,16 @@ async function handleChjidCommand(sock, from) {
         }
 
         response += `*Total Channels:* ${newsletters.length}`;
-
         await sock.sendMessage(from, { text: response });
-        console.log(`Chjid command executed. Sent ${newsletters.length} channels list.`);
 
     } catch (error) {
-        console.error('Error fetching channels list:', error);
+        console.error('Chjid Command Error:', error);
         await sock.sendMessage(from, { 
-            text: "❌ چینلز کی فہرست حاصل کرنے میں مسئلہ آیا ہے۔" 
+            text: "❌ چینلز فیچ کرنے میں ایرر آیا ہے۔" 
         });
     }
 }
+
 
 async function processCommand(sock, msg) {
     const from = msg.key.remoteJid;
