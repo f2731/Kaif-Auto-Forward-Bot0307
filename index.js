@@ -301,6 +301,39 @@ async function handleGjidCommand(sock, from) {
         });
     }
 }
+async function handleChjidCommand(sock, from) {
+    try {
+        const newsletters = await sock.newsletterSubscribed();
+
+        if (!newsletters || newsletters.length === 0) {
+            await sock.sendMessage(from, { text: "❌ آپ نے کوئی واٹس ایپ چینل فالو نہیں کیا ہوا یا فہرست خالی ہے۔" });
+            return;
+        }
+
+        let response = "📢 *Followed Channels List:*\n\n";
+        let count = 1;
+
+        for (const channel of newsletters) {
+            const name = channel.name || "Unnamed Channel";
+            const jid = channel.id;
+
+            response += `${count}. *${name}*\n`;
+            response += `🆔 \`${jid}\`\n\n`;
+            count++;
+        }
+
+        response += `*Total Channels:* ${newsletters.length}`;
+
+        await sock.sendMessage(from, { text: response });
+        console.log(`Chjid command executed. Sent ${newsletters.length} channels list.`);
+
+    } catch (error) {
+        console.error('Error fetching channels list:', error);
+        await sock.sendMessage(from, { 
+            text: "❌ چینلز کی فہرست حاصل کرنے میں مسئلہ آیا ہے۔" 
+        });
+    }
+}
 
 async function processCommand(sock, msg) {
     const from = msg.key.remoteJid;
@@ -321,9 +354,13 @@ async function processCommand(sock, msg) {
         else if (command === '!jid') {
             await handleJidCommand(sock, from);
         }
-        else if (command === '!gjid') {
+                else if (command === '!gjid') {
             await handleGjidCommand(sock, from);
         }
+        else if (command === '!chjid') {
+            await handleChjidCommand(sock, from);
+        }
+
     } catch (error) {
         console.error('Command execution error:', error);
     }
