@@ -301,44 +301,22 @@ async function handleGjidCommand(sock, from) {
         });
     }
 }
-async function handleChjidCommand(sock, from) {
+async function handleForwardCommand(sock, msg, from) {
     try {
-        let newsletters = [];
+        const quotedMessage = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         
-        if (typeof sock.newsletterSubscribed === 'function') {
-            newsletters = await sock.newsletterSubscribed().catch(() => []);
-        }
-
-        if (!newsletters || newsletters.length === 0) {
-            await sock.sendMessage(from, { 
-                text: "❌ کوئی واٹس ایپ چینل نہیں ملا۔ یقینی بنائیں کہ 0307 والے نمبر سے چینل **Follow** کیا ہوا ہے۔" 
-            });
+        if (!quotedMessage) {
+            await sock.sendMessage(from, { text: "❌ براہ کرم کسی بھی میسج کا **Reply** دے کر `!forward` لکھیں۔" });
             return;
         }
 
-        let response = "📢 *Followed Channels List:*\n\n";
-        let count = 1;
-
-        for (const channel of newsletters) {
-            const name = channel.name || channel.subject || "Unnamed Channel";
-            const jid = channel.id || channel.jid;
-
-            response += `${count}. *${name}*\n`;
-            response += `🆔 \`${jid}\`\n\n`;
-            count++;
-        }
-
-        response += `*Total Channels:* ${newsletters.length}`;
-        await sock.sendMessage(from, { text: response });
-
+        await sock.sendMessage(from, { forward: { key: { remoteJid: from }, message: quotedMessage } });
+        
     } catch (error) {
-        console.error('Chjid Command Error:', error);
-        await sock.sendMessage(from, { 
-            text: "❌ چینلز فیچ کرنے میں ایرر آیا ہے۔" 
-        });
+        console.error('Forward Command Error:', error);
+        await sock.sendMessage(from, { text: "❌ میسج فارورڈ کرنے میں مسئلہ آیا ہے۔" });
     }
 }
-
 
 async function processCommand(sock, msg) {
     const from = msg.key.remoteJid;
@@ -362,10 +340,10 @@ async function processCommand(sock, msg) {
                 else if (command === '!gjid') {
             await handleGjidCommand(sock, from);
         }
-        else if (command === '!chjid') {
-            await handleChjidCommand(sock, from);
-        }
-
+                    else if (command === '!forward') {
+                await handleForwardCommand(sock, msg, from);
+                    }
+        
     } catch (error) {
         console.error('Command execution error:', error);
     }
