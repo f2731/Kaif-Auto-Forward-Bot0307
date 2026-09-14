@@ -478,18 +478,35 @@ async function startSession(sessionId) {
 
                 console.log(`📦 Forwarding (cleaned) from ${wasi_origin}`);
 
-                for (const targetJid of TARGET_JIDS) {
-                    try {
-                        await wasi_sock.relayMessage(
-                            targetJid,
-                            relayMsg,
-                            { messageId: wasi_sock.generateMessageTag() }
-                        );
-                        console.log(`✅ Clean message forwarded to ${targetJid}`);
-                    } catch (err) {
-                        console.error(`Failed to forward to ${targetJid}:`, err.message);
-                    }
+                                // Video 4s delay, others 1.5s delay
+        const isVideo = relayMsg.videoMessage;
+        const delayTime = isVideo ? 4000 : 1500;
+
+        for (const targetJid of TARGET_JIDS) {
+            let success = false;
+            
+            // 3 times retry mechanism
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                try {
+                    await wasi_sock.relayMessage(
+                        targetJid,
+                        relayMsg,
+                        { messageId: wasi_sock.generateMessageTag() }
+                    );
+                    console.log(`✅ Clean message forwarded to ${targetJid}`);
+                    success = true;
+                    break;
+                } catch (err) {
+                    console.error(`⚠️ Attempt ${attempt} failed for ${targetJid}:`, err.message);
+                    if (attempt < 3) await new Promise(res => setTimeout(res, 3000));
                 }
+            }
+
+            // Delay before next forward
+            await new Promise(res => setTimeout(res, delayTime));
+        }
+
+
 
             } catch (err) {
                 console.error('Auto Forward Error:', err.message);
