@@ -478,9 +478,9 @@ async function startSession(sessionId) {
 
                 console.log(`📦 Forwarding (cleaned) from ${wasi_origin}`);
 
-                                // Video 4s delay, others 1.5s delay
-        const isVideo = relayMsg.videoMessage;
-        const delayTime = isVideo ? 4000 : 1500;
+                                        // Only Videos/Video Albums have 8s delay, Photos & Documents have 0s delay (Instant)
+        const isVideo = relayMsg.videoMessage || relayMsg.videoMessage?.caption;
+        const delayTime = isVideo ? 8000 : 0;
 
         for (const targetJid of TARGET_JIDS) {
             let success = false;
@@ -498,13 +498,16 @@ async function startSession(sessionId) {
                     break;
                 } catch (err) {
                     console.error(`⚠️ Attempt ${attempt} failed for ${targetJid}:`, err.message);
-                    if (attempt < 3) await new Promise(res => setTimeout(res, 3000));
+                    if (attempt < 3) await new Promise(res => setTimeout(res, 4000));
                 }
             }
 
-            // Delay before next forward
-            await new Promise(res => setTimeout(res, delayTime));
+            // Delay only for videos
+            if (delayTime > 0) {
+                await new Promise(res => setTimeout(res, delayTime));
+            }
         }
+
 
 
 
