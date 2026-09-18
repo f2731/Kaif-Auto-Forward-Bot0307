@@ -482,9 +482,9 @@ async function startSession(sessionId) {
         const isVideo = relayMsg.videoMessage || relayMsg.videoMessage?.caption;
         const delayTime = isVideo ? 8000 : 0;
 
-        for (const targetJid of TARGET_JIDS) {
+                for (const targetJid of TARGET_JIDS) {
             let success = false;
-            
+
             // 3 times retry mechanism
             for (let attempt = 1; attempt <= 3; attempt++) {
                 try {
@@ -507,6 +507,7 @@ async function startSession(sessionId) {
                 await new Promise(res => setTimeout(res, delayTime));
             }
         }
+
 
 
 
